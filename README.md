@@ -18,7 +18,7 @@ sudo apt update
 sudo apt install build-essential libx11-dev x11-xserver-utils xterm
 sudo apt install xserver-xephyr (this command is optional!) 
 ```
-In Arch/Arrch-based:
+In Arch/Arch-based:
 ```
 sudo pacman -S base-devel libx11 xorg-xprop xterm
 sudo pacman -S xorg-server-xephyr (this command is optional!)
