@@ -1,6 +1,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
+#include <X11/cursorfont.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,7 +9,7 @@
 
 #define TITLEBAR_HEIGHT 20
 #define BORDER_WIDTH 2
-
+#define RESIZE_HANDLE_SIZE 10
 #define MAX_WINDOWS 100
 
 typedef struct {
@@ -53,17 +54,25 @@ void spawn_terminal() {
 }
 
 void create_frame(Window client) {
-    int win_width = 480;
-    int win_height = 320;
-
+    XWindowAttributes attr;
+    XGetWindowAttributes(display, client, &attr);
+    int win_width = attr.width;
+    int win_height = attr.height;
+    if(win_width<50||win_height<50){
+		win_width=480;
+    	win_height=320;
+    }
+int extra_w = RESIZE_HANDLE_SIZE;
     Window frame = XCreateSimpleWindow(display, root,
-        100, 100,  // Position on screen
-        win_width + 2 * BORDER_WIDTH,
-        win_height + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH,
+        100, 100,
+        win_width + 2 * BORDER_WIDTH + extra_w,
+        win_height + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH ,
         BORDER_WIDTH,
         BlackPixel(display, DefaultScreen(display)),
         WhitePixel(display, DefaultScreen(display))
     );
+
+
 
     Window titlebar = XCreateSimpleWindow(display, frame,
         0, 0,
@@ -90,14 +99,22 @@ void create_frame(Window client) {
 
 // Create resize handle (bottom-right corner of frame)
 Window resize_handle = XCreateSimpleWindow(display, frame,
-    win_width + BORDER_WIDTH - 10,
-    win_height + TITLEBAR_HEIGHT + BORDER_WIDTH - 10,
-    10, 10,
-    0,
+    win_width + BORDER_WIDTH,
+    TITLEBAR_HEIGHT + win_height + BORDER_WIDTH - 12,
+    RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE,
+    1,
     BlackPixel(display, DefaultScreen(display)),
-    0x888888 // light gray
+    0x888888
 );
 
+Cursor normal_cursor = XCreateFontCursor(display, XC_left_ptr);
+    Cursor move_cursor   = XCreateFontCursor(display, XC_fleur);
+    Cursor resize_cursor = XCreateFontCursor(display, XC_bottom_right_corner);
+    
+XDefineCursor(display, frame, normal_cursor);
+XDefineCursor(display, titlebar, move_cursor);
+XDefineCursor(display, close_btn, normal_cursor);
+XDefineCursor(display, resize_handle, resize_cursor);
 // Select for mouse drag events
 XSelectInput(display, resize_handle, ButtonPressMask | ButtonReleaseMask | PointerMotionMask);
 XMapWindow(display, resize_handle);
@@ -219,26 +236,28 @@ int main() {
                             
                                     int new_w = resize_win_start_w + dw;
                                     int new_h = resize_win_start_h + dh;
+                            if (new_w < 50) new_w = 50;
+                            if (new_h < 50) new_h = 50;
                             
                                     // Resize client
                                     XResizeWindow(display, managed[i].client, new_w, new_h);
-                            
-                                    // Resize frame
                                     XResizeWindow(display, managed[i].frame,
-                                        new_w + 2 * BORDER_WIDTH,
+                                        new_w + 2 * BORDER_WIDTH + RESIZE_HANDLE_SIZE,
                                         new_h + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH
                                     );
+                               
                             
                                     // Resize titlebar and reposition close button
                                     XResizeWindow(display, managed[i].titlebar, new_w, TITLEBAR_HEIGHT);
                                     XMoveWindow(display, managed[i].close_btn, new_w - TITLEBAR_HEIGHT, 0);
                             
                                     // Move resize handle to new bottom-right
+                                    XResizeWindow(display, managed[i].titlebar, new_w, TITLEBAR_HEIGHT);
+                                    XMoveWindow(display, managed[i].close_btn, new_w - TITLEBAR_HEIGHT, 0);
                                     XMoveWindow(display, managed[i].resize_handle,
-                                        new_w + BORDER_WIDTH - 10,
-                                        new_h + TITLEBAR_HEIGHT + BORDER_WIDTH - 10
+                                        new_w + BORDER_WIDTH,
+                                        new_h + TITLEBAR_HEIGHT + BORDER_WIDTH - 12
                                     );
-                                }
                                 break;
                             
                             case ButtonRelease:
@@ -249,6 +268,6 @@ int main() {
                         
               }
     }
-
+}
     return 0;
 }
