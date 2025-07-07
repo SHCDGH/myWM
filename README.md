@@ -18,13 +18,11 @@ In Debian/Debian-based:
 ```
 sudo apt update
 sudo apt install build-essential libx11-dev x11-xserver-utils xterm
-sudo apt install xserver-xephyr (this command is optional!)
 make clean && make
 ```
 In Arch/Arch-based:
 ```
 sudo pacman -S base-devel libx11 xorg-xprop xterm
-sudo pacman -S xorg-server-xephyr (this command is optional!)
 make clean && make
 ```
 # How to run/test
