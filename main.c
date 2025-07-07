@@ -66,7 +66,7 @@ int extra_w = RESIZE_HANDLE_SIZE;
     Window frame = XCreateSimpleWindow(display, root,
         100, 100,
         win_width + 2 * BORDER_WIDTH + extra_w,
-        win_height + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH ,
+        win_height + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH-2 ,
         BORDER_WIDTH,
         BlackPixel(display, DefaultScreen(display)),
         WhitePixel(display, DefaultScreen(display))
@@ -82,8 +82,10 @@ int extra_w = RESIZE_HANDLE_SIZE;
         BlackPixel(display, DefaultScreen(display)),
         WhitePixel(display, DefaultScreen(display))
     );
-    XSelectInput(display, titlebar, ButtonPressMask | ButtonReleaseMask | PointerMotionMask);
-    
+XSelectInput(display, titlebar, ExposureMask | ButtonPressMask | ButtonReleaseMask | PointerMotionMask);
+
+    GC gc = XCreateGC(display, titlebar, 0, NULL);
+    XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
 
     Window close_btn = XCreateSimpleWindow(display, titlebar,
         win_width - TITLEBAR_HEIGHT, 0,
@@ -96,7 +98,6 @@ int extra_w = RESIZE_HANDLE_SIZE;
     XSelectInput(display, close_btn, ButtonPressMask);
     XMapWindow(display, close_btn);
     XMapWindow(display, titlebar);
-
 // Create resize handle (bottom-right corner of frame)
 Window resize_handle = XCreateSimpleWindow(display, frame,
     win_width + BORDER_WIDTH,
@@ -131,6 +132,9 @@ managed_count++;
     // Reparent and force-resize the client
     XAddToSaveSet(display, client);
     XReparentWindow(display, client, frame, 0, TITLEBAR_HEIGHT);
+    XSelectInput(display, frame, SubstructureNotifyMask | ButtonPressMask);
+    
+    
     XResizeWindow(display, client, win_width, win_height);
 
 
@@ -142,6 +146,8 @@ managed_count++;
     hints.width = win_width;
     hints.height = win_height;
     XSetWMNormalHints(display, client, &hints);
+
+
 
     XMapWindow(display, client);
     XMapWindow(display, frame);
@@ -196,6 +202,9 @@ int main() {
                                         XDestroyWindow(display, managed[i].client);
                                         XDestroyWindow(display, managed[i].frame);
                                     } else if (ev.xbutton.window == managed[i].titlebar) {
+                                    XRaiseWindow(display, managed[i].frame);
+                                    XSetInputFocus(display, managed[i].client, RevertToParent, CurrentTime);
+                                    
                                         dragging_frame = managed[i].frame;
                                         drag_start_x = ev.xbutton.x_root;
                                         drag_start_y = ev.xbutton.y_root;
@@ -215,6 +224,11 @@ int main() {
                                         resize_win_start_w = attr.width;
                                         resize_win_start_h = attr.height;
                                     }
+                                    else if (ev.xbutton.window == managed[i].client) {
+                                        XRaiseWindow(display, managed[i].frame);
+                                                    XSetInputFocus(display, managed[i].client, RevertToParent, CurrentTime);
+                                    }
+                                    
                                 }
                                 break;
                             
@@ -243,7 +257,7 @@ int main() {
                                     XResizeWindow(display, managed[i].client, new_w, new_h);
                                     XResizeWindow(display, managed[i].frame,
                                         new_w + 2 * BORDER_WIDTH + RESIZE_HANDLE_SIZE,
-                                        new_h + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH
+                                        new_h + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH-2
                                     );
                                
                             
@@ -267,6 +281,21 @@ int main() {
                             
                         
               }
+              case Expose:
+                  for (int i = 0; i < managed_count; i++) {
+                      if (ev.xexpose.window == managed[i].titlebar) {
+                          char *title = NULL;
+                          if (XFetchName(display, managed[i].client, &title) && title) {
+                              GC gc = XCreateGC(display, managed[i].titlebar, 0, NULL);
+                              XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
+                              XDrawString(display, managed[i].titlebar, gc, 6, 14, title, strlen(title));
+                              XFreeGC(display, gc);
+                              XFree(title);
+                          }
+                      }
+                  }
+                  break;
+              
     }
 }
     return 0;
