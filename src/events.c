@@ -199,3 +199,82 @@ void handle_unmap_notify(XEvent *ev) {
         remove_managed_window(ev->xunmap.window);
     }
 }
+
+// Key combination functions
+int find_focused_window(void) {
+    Window focused_window;
+    int revert_to;
+    XGetInputFocus(display, &focused_window, &revert_to);
+    
+    // Find which managed window contains this focused window
+    for (int i = 0; i < managed_count; i++) {
+        if (managed[i].client == focused_window || 
+            managed[i].frame == focused_window ||
+            managed[i].titlebar == focused_window) {
+            return i;
+        }
+    }
+    return -1;  // No focused managed window found
+}
+
+void close_focused_window(void) {
+    int focused_idx = find_focused_window();
+    if (focused_idx >= 0) {
+        remove_managed_window(managed[focused_idx].client);
+    } else {
+        printf("No focused window to close\n");
+    }
+}
+
+void minimize_focused_window(void) {
+    int focused_idx = find_focused_window();
+    if (focused_idx >= 0) {
+        if (!managed[focused_idx].minimized) {
+            minimize_window(focused_idx);
+        } else {
+            printf("Window is already minimized\n");
+        }
+    } else {
+        printf("No focused window to minimize\n");
+    }
+}
+
+void toggle_maximize_focused_window(void) {
+    int focused_idx = find_focused_window();
+    if (focused_idx >= 0) {
+        if (managed[focused_idx].minimized) {
+            restore_window(focused_idx);
+        } else {
+            // For now, just restore if minimized, or minimize if normal
+            // True maximize functionality would require storing original size
+            // and expanding to screen size
+            minimize_window(focused_idx);
+        }
+    } else {
+        printf("No focused window to maximize/restore\n");
+    }
+}
+
+void cycle_windows(void) {
+    if (managed_count <= 1) {
+        printf("Not enough windows to cycle\n");
+        return;
+    }
+    
+    // Simple cycling: find current focused window and focus the next one
+    int focused_idx = find_focused_window();
+    int next_idx = (focused_idx + 1) % managed_count;
+    
+    if (next_idx < 0) next_idx = 0;  // If no focused window, start with first
+    
+    // Raise and focus the next window
+    if (!managed[next_idx].minimized) {
+        XRaiseWindow(display, managed[next_idx].frame);
+        XSetInputFocus(display, managed[next_idx].client, RevertToParent, CurrentTime);
+        printf("Cycled to window %d\n", next_idx);
+    } else {
+        // If next window is minimized, restore it
+        restore_window(next_idx);
+        printf("Cycled to and restored window %d\n", next_idx);
+    }
+}

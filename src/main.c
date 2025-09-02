@@ -11,6 +11,8 @@ int main() {
     set_checkerboard_background(display, root, 1);
 
     XSelectInput(display, root, SubstructureRedirectMask | SubstructureNotifyMask | KeyPressMask | KeyReleaseMask);
+    
+    // Existing key bindings
     XGrabKey(display, XKeysymToKeycode(display, XK_Return), Mod1Mask, root,
              True, GrabModeAsync, GrabModeAsync);
     
@@ -26,6 +28,31 @@ int main() {
     XGrabKey(display, XKeysymToKeycode(display, XK_Alt_L), 0, root,
              True, GrabModeAsync, GrabModeAsync);
     XGrabKey(display, XKeysymToKeycode(display, XK_Control_L), 0, root,
+             True, GrabModeAsync, GrabModeAsync);
+    
+    // Additional key combinations for window management
+    // Alt+F4 - Close focused window
+    XGrabKey(display, XKeysymToKeycode(display, XK_F4), Mod1Mask, root,
+             True, GrabModeAsync, GrabModeAsync);
+    
+    // Alt+Tab - Window cycling (future feature)
+    XGrabKey(display, XKeysymToKeycode(display, XK_Tab), Mod1Mask, root,
+             True, GrabModeAsync, GrabModeAsync);
+    
+    // Alt+F10 - Maximize/restore window
+    XGrabKey(display, XKeysymToKeycode(display, XK_F10), Mod1Mask, root,
+             True, GrabModeAsync, GrabModeAsync);
+    
+    // Alt+F9 - Minimize window
+    XGrabKey(display, XKeysymToKeycode(display, XK_F9), Mod1Mask, root,
+             True, GrabModeAsync, GrabModeAsync);
+    
+    // Ctrl+Alt+T - Terminal (alternative to Alt+Enter)
+    XGrabKey(display, XKeysymToKeycode(display, XK_t), Mod1Mask | ControlMask, root,
+             True, GrabModeAsync, GrabModeAsync);
+    
+    // Alt+Space - Window menu (future feature)
+    XGrabKey(display, XKeysymToKeycode(display, XK_space), Mod1Mask, root,
              True, GrabModeAsync, GrabModeAsync);
     
     // Initialize the app launcher
@@ -50,6 +77,29 @@ int main() {
                         printf("Alt+Enter pressed — launching xterm\n");
                         fflush(stdout);
                         spawn_terminal();
+                    } else if ((ev.xkey.state & Mod1Mask) && (ev.xkey.state & ControlMask) && key == XK_t) {
+                        printf("Ctrl+Alt+T pressed — launching xterm\n");
+                        fflush(stdout);
+                        spawn_terminal();
+                    } else if ((ev.xkey.state & Mod1Mask) && key == XK_F4) {
+                        printf("Alt+F4 pressed — closing focused window\n");
+                        fflush(stdout);
+                        close_focused_window();
+                    } else if ((ev.xkey.state & Mod1Mask) && key == XK_F9) {
+                        printf("Alt+F9 pressed — minimizing focused window\n");
+                        fflush(stdout);
+                        minimize_focused_window();
+                    } else if ((ev.xkey.state & Mod1Mask) && key == XK_F10) {
+                        printf("Alt+F10 pressed — maximizing/restoring focused window\n");
+                        fflush(stdout);
+                        toggle_maximize_focused_window();
+                    } else if ((ev.xkey.state & Mod1Mask) && key == XK_Tab) {
+                        printf("Alt+Tab pressed — cycling windows\n");
+                        fflush(stdout);
+                        cycle_windows();
+                    } else if ((ev.xkey.state & Mod1Mask) && key == XK_space) {
+                        printf("Alt+Space pressed — window menu (not implemented yet)\n");
+                        fflush(stdout);
                     } else if (key == XK_Super_L) {
                         printf("GUI key pressed — toggling launcher\n");
                         fflush(stdout);

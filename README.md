@@ -5,6 +5,21 @@ Window manager made by me. It's built for X11 in C.
 - Alt+Enter opens xterm
 - Window border featuring close and resize button
 - Moveable windows
+- Dynamic minimize (shows only titlebar)
+- GNOME-style app launcher
+- Comprehensive keyboard shortcuts
+
+# Key combinations
+- Alt+Enter: Open xterm
+- Ctrl+Alt+T: Open xterm (alternative)
+- GUI/Super/Win Key: Toggle app launcher
+- Alt+Ctrl: Toggle app launcher (alternative)
+- Alt+F4: Close focused window
+- Alt+F9: Minimize focused window
+- Alt+F10: Maximize/restore focused window
+- Alt+Tab: Cycle through open windows
+- Alt+Space: Window menu (placeholder)
+- Escape: Close app launcher (when open)
 
 # How to compile
 To compile the WM, you will need:
@@ -45,4 +60,4 @@ sudo pacman -S xorg-server-xephyr
 - [x] Make the window border dissapear if app is closed internally
 - [x] Add a minimize button
 - [x] Make app launcher
-- [ ] Add more key combinations
+- [x] Add more key combinations

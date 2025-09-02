@@ -102,4 +102,11 @@ void handle_destroy_notify(XEvent *ev);
 void handle_unmap_notify(XEvent *ev);
 void remove_managed_window(Window client);
 
+// Key combination functions
+void close_focused_window(void);
+void minimize_focused_window(void);
+void toggle_maximize_focused_window(void);
+void cycle_windows(void);
+int find_focused_window(void);
+
 #endif // MYWM_H
