@@ -6,9 +6,24 @@ void handle_button_press(XEvent *ev) {
             // Use the new remove function for consistency
             remove_managed_window(managed[i].client);
             break;
+        } else if (ev->xbutton.window == managed[i].minimize_btn) {
+            // Toggle minimize/restore
+            if (managed[i].minimized) {
+                restore_window(i);
+            } else {
+                minimize_window(i);
+            }
+            break;
         } else if (ev->xbutton.window == managed[i].titlebar) {
+            // Track titlebar click for potential restore (but don't restore immediately)
+            clicked_titlebar = managed[i].titlebar;
+            click_moved = 0;  // Reset movement flag
+            
+            // Set up dragging for both minimized and normal windows
             XRaiseWindow(display, managed[i].frame);
-            XSetInputFocus(display, managed[i].client, RevertToParent, CurrentTime);
+            if (!managed[i].minimized) {
+                XSetInputFocus(display, managed[i].client, RevertToParent, CurrentTime);
+            }
             
             dragging_frame = managed[i].frame;
             drag_start_x = ev->xbutton.x_root;
@@ -30,12 +45,20 @@ void handle_button_press(XEvent *ev) {
             resize_win_start_h = attr.height;
         } else if (ev->xbutton.window == managed[i].client) {
             XRaiseWindow(display, managed[i].frame);
-            XSetInputFocus(display, managed[i].client, RevertToParent, CurrentTime);
+            // Only set focus if window is not minimized
+            if (!managed[i].minimized) {
+                XSetInputFocus(display, managed[i].client, RevertToParent, CurrentTime);
+            }
         }
     }
 }
 
 void handle_motion_notify(XEvent *ev) {
+    // If we're tracking a titlebar click, mark that movement occurred
+    if (clicked_titlebar != None) {
+        click_moved = 1;
+    }
+    
     if (dragging_frame != None) {
         int dx = ev->xmotion.x_root - drag_start_x;
         int dy = ev->xmotion.y_root - drag_start_y;
@@ -63,9 +86,14 @@ void handle_motion_notify(XEvent *ev) {
             new_h + TITLEBAR_HEIGHT + 2 * BORDER_WIDTH-2
         );
 
-        // Resize titlebar and reposition close button
+        // Update stored dimensions for minimize/restore
+        managed[i].original_width = new_w;
+        managed[i].original_height = new_h;
+
+        // Resize titlebar and reposition close and minimize buttons
         XResizeWindow(display, managed[i].titlebar, new_w, TITLEBAR_HEIGHT);
         XMoveWindow(display, managed[i].close_btn, new_w - TITLEBAR_HEIGHT, 0);
+        XMoveWindow(display, managed[i].minimize_btn, new_w - 2 * TITLEBAR_HEIGHT, 0);
 
         // Move resize handle to new bottom-right
         XMoveWindow(display, managed[i].resize_handle,
@@ -76,6 +104,22 @@ void handle_motion_notify(XEvent *ev) {
 }
 
 void handle_button_release(XEvent *ev) {
+    // Check if we had a titlebar click without movement
+    if (clicked_titlebar != None && !click_moved) {
+        // Find the window that was clicked
+        for (int i = 0; i < managed_count; i++) {
+            if (managed[i].titlebar == clicked_titlebar && managed[i].minimized) {
+                restore_window(i);
+                break;
+            }
+        }
+    }
+    
+    // Reset click tracking
+    clicked_titlebar = None;
+    click_moved = 0;
+    
+    // Reset drag/resize state
     dragging_frame = None;
     resizing_frame = None;
 }
@@ -87,7 +131,31 @@ void handle_expose(XEvent *ev) {
             if (XFetchName(display, managed[i].client, &title) && title) {
                 GC gc = XCreateGC(display, managed[i].titlebar, 0, NULL);
                 XSetForeground(display, gc, BlackPixel(display, DefaultScreen(display)));
-                XDrawString(display, managed[i].titlebar, gc, 6, 14, title, strlen(title));
+                
+                if (managed[i].minimized) {
+                    // Center text both horizontally and vertically for minimized windows
+                    XWindowAttributes titlebar_attr;
+                    XGetWindowAttributes(display, managed[i].titlebar, &titlebar_attr);
+                    
+                    // Get text width for horizontal centering
+                    XFontStruct *font = XQueryFont(display, XGContextFromGC(gc));
+                    int text_width = 0;
+                    if (font) {
+                        text_width = XTextWidth(font, title, strlen(title));
+                        XFreeFontInfo(NULL, font, 1);
+                    } else {
+                        text_width = strlen(title) * 8;  // Fallback estimate
+                    }
+                    
+                    int x = (titlebar_attr.width - text_width) / 2;
+                    int y = (TITLEBAR_HEIGHT + 8) / 2;  // Center vertically (8 is approx font height)
+                    
+                    XDrawString(display, managed[i].titlebar, gc, x, y, title, strlen(title));
+                } else {
+                    // Normal positioning for non-minimized windows
+                    XDrawString(display, managed[i].titlebar, gc, 6, 14, title, strlen(title));
+                }
+                
                 XFreeGC(display, gc);
                 XFree(title);
             }

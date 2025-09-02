@@ -19,8 +19,12 @@ typedef struct {
     Window frame;
     Window client;
     Window close_btn;
+    Window minimize_btn;
     Window titlebar;
     Window resize_handle;
+    int minimized;  // 0 = normal, 1 = minimized
+    int original_width;   // Store original dimensions for restore
+    int original_height;
 } ManagedWindow;
 
 // Global variables
@@ -37,6 +41,10 @@ extern Window resizing_frame;
 extern int resize_start_x, resize_start_y;
 extern int resize_win_start_w, resize_win_start_h;
 
+// Titlebar click state for minimize/restore
+extern Window clicked_titlebar;
+extern int click_moved;
+
 // Function declarations
 // utils.c
 void set_checkerboard_background(Display *display, Window root, int size);
@@ -44,6 +52,8 @@ void spawn_terminal(void);
 
 // window.c
 void create_frame(Window client);
+void minimize_window(int window_index);
+void restore_window(int window_index);
 
 // events.c
 void handle_button_press(XEvent *ev);
