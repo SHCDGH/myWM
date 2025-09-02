@@ -6,7 +6,7 @@ CFLAGS = -Wall -O2
 LDFLAGS = -lX11
 
 SRCDIR = src
-SOURCES = $(SRCDIR)/main.c $(SRCDIR)/window.c $(SRCDIR)/events.c $(SRCDIR)/utils.c $(SRCDIR)/globals.c
+SOURCES = $(SRCDIR)/main.c $(SRCDIR)/window.c $(SRCDIR)/events.c $(SRCDIR)/utils.c $(SRCDIR)/globals.c $(SRCDIR)/launcher.c
 OBJECTS = $(SOURCES:.c=.o)
 TARGET = mywm
 

@@ -5,6 +5,7 @@ ManagedWindow managed[MAX_WINDOWS];
 int managed_count = 0;
 Display *display;
 Window root;
+AppLauncher launcher;
 
 // Window drag/resize state
 Window dragging_frame = None;
@@ -17,3 +18,7 @@ int resize_win_start_w, resize_win_start_h;
 // Titlebar click state for minimize/restore
 Window clicked_titlebar = None;
 int click_moved = 0;
+
+// Alt+Ctrl launcher state
+int alt_pressed = 0;
+int ctrl_pressed = 0;
