@@ -42,8 +42,7 @@ sudo pacman -S xorg-server-xephyr
 - [x] Add window focus
 - [x] Modify the window borders a bit
 - [x] Make resize stop being able to make the window a negative size
-- [ ] Make the window border dissapear if app is closed internally
+- [x] Make the window border dissapear if app is closed internally
 - [ ] Add a minimize button
 - [ ] Make app launcher
 - [ ] Add more key combinations
-

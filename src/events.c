@@ -3,8 +3,9 @@
 void handle_button_press(XEvent *ev) {
     for (int i = 0; i < managed_count; i++) {
         if (ev->xbutton.window == managed[i].close_btn) {
-            XDestroyWindow(display, managed[i].client);
-            XDestroyWindow(display, managed[i].frame);
+            // Use the new remove function for consistency
+            remove_managed_window(managed[i].client);
+            break;
         } else if (ev->xbutton.window == managed[i].titlebar) {
             XRaiseWindow(display, managed[i].frame);
             XSetInputFocus(display, managed[i].client, RevertToParent, CurrentTime);
@@ -91,5 +92,42 @@ void handle_expose(XEvent *ev) {
                 XFree(title);
             }
         }
+    }
+}
+
+void remove_managed_window(Window client) {
+    for (int i = 0; i < managed_count; i++) {
+        if (managed[i].client == client) {
+            // Destroy the frame and all its children
+            XDestroyWindow(display, managed[i].frame);
+            
+            // Remove from managed list by shifting remaining windows
+            for (int j = i; j < managed_count - 1; j++) {
+                managed[j] = managed[j + 1];
+            }
+            managed_count--;
+            
+            // Reset drag/resize state if this window was being manipulated
+            if (dragging_frame == managed[i].frame) {
+                dragging_frame = None;
+            }
+            if (resizing_frame == managed[i].frame) {
+                resizing_frame = None;
+            }
+            break;
+        }
+    }
+}
+
+void handle_destroy_notify(XEvent *ev) {
+    // Handle when a client window is destroyed
+    remove_managed_window(ev->xdestroywindow.window);
+}
+
+void handle_unmap_notify(XEvent *ev) {
+    // Handle when a client window is unmapped (hidden)
+    // This catches cases where apps close themselves
+    if (ev->xunmap.event == root) {
+        remove_managed_window(ev->xunmap.window);
     }
 }

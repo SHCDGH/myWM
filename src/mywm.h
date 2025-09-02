@@ -50,5 +50,8 @@ void handle_button_press(XEvent *ev);
 void handle_motion_notify(XEvent *ev);
 void handle_button_release(XEvent *ev);
 void handle_expose(XEvent *ev);
+void handle_destroy_notify(XEvent *ev);
+void handle_unmap_notify(XEvent *ev);
+void remove_managed_window(Window client);
 
 #endif // MYWM_H

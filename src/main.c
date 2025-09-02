@@ -48,6 +48,14 @@ int main() {
             case Expose:
                 handle_expose(&ev);
                 break;
+
+            case DestroyNotify:
+                handle_destroy_notify(&ev);
+                break;
+
+            case UnmapNotify:
+                handle_unmap_notify(&ev);
+                break;
         }
     }
     return 0;
